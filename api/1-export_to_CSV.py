@@ -39,5 +39,6 @@ def get_api():
     except requests.exceptions.RequestException as e:
         print(f"Error: Failed to fetch data from the API. {e}")
 
+
 if __name__ == '__main__':
     get_api()
