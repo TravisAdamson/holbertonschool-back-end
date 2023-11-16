@@ -1,30 +1,43 @@
 #!/usr/bin/python3
-""" Requests the user information from a given API """
+""" Send the data to a CSV file """
+import csv
 import requests
+from sys import argv
 
 
-def display_employee_progress(employee_id):
-    """ script must display to stdout the employee todo list progress """
-    url = "https://jsonplaceholder.typicode.com"
-    empl_url = f"{url}/users/{employee_id}"
-    todo_url = f"{url}/todos"
+def get_api():
+    """ Get the data from the API as requested """
+    if len(argv) != 2:
+        print("Usage: python script_name.py user_id")
+        return
 
-    empl_data = requests.get(empl_url).json()
-    todo_data = requests.get(todo_url,
-                             params={"userId": employee_id}).json()
+    url = 'https://jsonplaceholder.typicode.com/'
+    uid = argv[1]
 
-    empl_name = empl_data.get("name")
-    completed_tasks = [t["title"] for t in todo_data if t["completed"]]
-    num_done = len(completed_tasks)
-    num_total = len(todo_data)
+    try:
+        usr_response = requests.get(url + 'users/{}'.format(uid))
+        usr_response.raise_for_status()
+        usr = usr_response.json()
 
-    print("Employee {} is done with tasks({}/{}):"
-          .format(empl_name, num_done, num_total))
-    for task in completed_tasks:
-        print(f"\t {task}")
+        todo_response = requests.get(url + 'todos', params={'userId': uid})
+        todo_response.raise_for_status()
+        todo = todo_response.json()
 
+        with open('{}.csv'.format(uid), 'w') as file:
+            writer = csv.writer(file, quoting=csv.QUOTE_ALL)
+            for employee in todo:
+                user_id = uid
+                username = usr.get('username')
+                task_comp = employee.get('completed')
+                task_title = employee.get('title')
 
-if __name__ == "__main__":
-    import sys
+                emp_record = [user_id, username, task_comp, task_title]
+                writer.writerow(emp_record)
 
-    display_employee_progress(int(sys.argv[1]))
+        print("Number of tasks in CSV: OK")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error: Failed to fetch data from the API. {e}")
+
+if __name__ == '__main__':
+    get_api()
